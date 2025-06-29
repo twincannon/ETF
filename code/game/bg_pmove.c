@@ -407,12 +407,30 @@ static void PM_AirAccelerate( vec3_t wishdir, float wishspeed, float accel )
 	tempvel[2] = 0;
 	accelspeed = VectorNormalize(tempvel);
 
+	float actualaccel = pm_airmaxspeeddiff;
+
+	// Agent gets a speed buff if they huff their gas
+	if (pm->ps->persistant[PERS_CURRCLASS] == Q3F_CLASS_AGENT && pm->ps->powerups[PW_Q3F_GAS]) {
+		float accel_max = 5.0f;
+
+		// Remap our air acceleration based on our current velocity (accelerate more quickly at lower speeds)
+		float start1 = 300.f;
+		float stop1 = 1200.f;
+		float start2 = accel_max;
+		float stop2 = pm_airmaxspeeddiff;
+		
+		actualaccel = start2 + (stop2 - start2) * ((accelspeed - start1) / (stop1 - start1));
+
+		// Clamp the result
+		actualaccel = Com_Clamp(pm_airmaxspeeddiff, accel_max, actualaccel);
+	}
+
 	// only apply the new accelerated speed if the user tries to stop
 	// save some (pm_airmaxspeeddiff) so that people can accellerate if they wish
 	// FIXME?: If accel is greater than maxspeeddiff, all accelleration is lost
 
 	// also, apply the new speed if the current speed is very low (to get away from jump pads)
-	if ((addspeed < (pm_airmaxspeeddiff + accelspeed)) || (accelspeed < pm_airminspeed))
+	if ((addspeed < (actualaccel + accelspeed)) || (accelspeed < pm_airminspeed))
 		VectorCopy(newvel, pm->ps->velocity); // decrease speed
 }
 

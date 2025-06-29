@@ -739,9 +739,20 @@ void HallucinogenicExplodeThink( gentity_t *ent )
 }
 qboolean HallucinogenicExplode( gentity_t *ent )
 {
-
-//	ent->soundLoop = 1;				//Tag the grenade as having exploded
-	HallucinogenicExplodeThink( ent );
+	if (ent->count) // If we held the grenade, don't spawn a cloud, and apply some gas effect to the agent
+	{
+		gclient_t* client = (ent->activator && ent->activator->client) ? ent->activator->client : NULL;
+		if (client)
+		{
+			client->ps.powerups[PW_Q3F_GAS] = level.time + 8000;
+			trap_SendServerCommand(ent->activator->s.number, va("print \"You inhale the hallucinogenic fumes and feel much faster.\n\""));
+		}
+	}
+	else
+	{
+		//	ent->soundLoop = 1;				//Tag the grenade as having exploded
+		HallucinogenicExplodeThink(ent);
+	}
 
 //	temp = G_TempEntity( ent->s.pos.trBase, EV_Q3F_GRENADE_EXPLOSION );
 //	temp->s.angles[1] = bg_q3f_grenade_flash.damage;
